@@ -1,18 +1,13 @@
-## Getting Started
+# Minesweeper (지뢰찾기)
 
-Welcome to the VS Code Java world. Here is a guideline to help you get started to write Java code in Visual Studio Code.
+자바 콘솔 기반 지뢰찾기 프로젝트입니다.
 
-## Folder Structure
+## 기능
+- 랜덤 지뢰 배치
+- 칸 열기 / 깃발 표시
+- 승리 & 패배 판정
 
-The workspace contains two folders by default, where:
-
-- `src`: the folder to maintain sources
-- `lib`: the folder to maintain dependencies
-
-Meanwhile, the compiled output files will be generated in the `bin` folder by default.
-
-> If you want to customize the folder structure, open `.vscode/settings.json` and update the related settings there.
-
-## Dependency Management
-
-The `JAVA PROJECTS` view allows you to manage your dependencies. More details can be found [here](https://github.com/microsoft/vscode-java-dependency#manage-dependencies).
+## 실행 방법
+```bash
+javac src/Main.java
+java src/Main
