@@ -65,9 +65,9 @@ class Board {
         System.out.println("result square : " + (81 - opened_count));
         for (int i = 0; i < 9; i++) {
             for (int j = 0; j < 9; j++) {
-                if(board[i][j].flaged) System.out.print("🚩\t");
-                else if(!board[i][j].opened) System.out.print("■\t");
-                else System.out.print(board[i][j].value + "\t");
+                if(board[i][j].flaged) System.out.print("▶ ");
+                else if(!board[i][j].opened) System.out.print("■ ");
+                else System.out.print(board[i][j].value + " ");
             }
             System.out.println();
         }
@@ -101,7 +101,8 @@ class Board {
                     System.out.println("You cannot open square flaged!");
                 }
                 else if(board[y][x].opened) System.out.println("You aleady open this square");
-                else if(board[y][x].value == "□") search(y, x);
+                else if(board[y][x].value.equals("□")) search(y, x);
+                else if(board[y][x].value.equals("💣")) fail(y, x);
                 else {
                     board[y][x].opened = true;
                     opened_count++;
@@ -111,14 +112,6 @@ class Board {
             case "F":
                 board[y][x].flaged = !board[y][x].flaged;
                 break;
-            case "lose":
-                for(int i = 0; i < 9; i++) {
-                    for(int j = 0; j < 9; j++) {
-                        board[y][x].opened = true;
-                    }
-                }
-                board[y][x].value = "💥";
-                break;
             default:
                 System.out.println("Please give me correct command");
         }
@@ -127,6 +120,20 @@ class Board {
 
     boolean clear() {
         return (opened_count == 9 * 9 - 10);
+    }
+    boolean bombed = false;
+
+    void fail(int y, int x) {
+        for(int i = 0; i < 9; i++) {
+            for(int j = 0; j < 9; j++) {
+                board[i][j].opened = true;
+            }
+        }
+        board[y][x].value = "💥";
+        bombed = true;
+    }
+    boolean failed() {
+        return bombed;
     }
 }
 
@@ -149,18 +156,16 @@ public class App {
                 continue;
             }
 
-            if(board.getvalue(y, x).equals("💣") && command == "O") {
-                command = "lose";
-                board.Command(y, x, command);
-                System.out.println("Oh.. You failed...");
-                break;
-            }
-
             board.Command(y, x, command);
             if(board.clear()) {
                 System.out.println("Congratulation for clear!!");
                 break;
             }
+            if(board.failed()) {
+                System.out.println("Oh... You failed...");
+                break;
+            }
+
         }
         
 
