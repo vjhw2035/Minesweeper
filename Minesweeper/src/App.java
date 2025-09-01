@@ -73,7 +73,7 @@ class Board {
             System.out.printf("%-3d", i + 1);
             for (int j = 0; j < 9; j++) {
                 if(board[i][j].flaged) System.out.printf("%-3s", "🚩");
-                else if(!board[i][j].opened) System.out.printf("%-3s", "■ ");
+                else if(!board[i][j].opened) System.out.printf("%-3s", "■");
                 else System.out.printf("%-3s", (board[i][j].value + " "));
             }
             System.out.println();
@@ -98,6 +98,22 @@ class Board {
         }
     }
 
+    boolean arround(int y, int x) {
+        int flagcnt = 0;
+        for(int dir = 0; dir < 8; dir++) {
+            int ny = y + dy[dir];
+            int nx = x + dx[dir];
+            if(nx >= 0 && nx < 9 && ny >= 0 && ny < 9) {
+                if(board[ny][nx].flaged) flagcnt++;
+            }
+        }
+        String flagcount = Integer.toString(flagcnt);
+        if (board[y][x].value.equals(flagcount)) {
+            return true;
+        }
+        else return false;
+    }
+
     void Command(int y, int x, String command) {
         y -= 1;
         x -= 1;
@@ -107,7 +123,27 @@ class Board {
                 if(board[y][x].flaged) {
                     System.out.println("You cannot open square flaged!");
                 }
-                else if(board[y][x].opened) System.out.println("You aleady open this square");
+                else if(board[y][x].opened) {
+                    if(!arround(y, x)) System.out.println("You aleady open this square");
+                    else {
+                        for(int dir = 0; dir < 8; dir++) {
+                            int ny = y + dy[dir];
+                            int nx = x + dx[dir];
+                            if(nx >= 0 && nx < 9 && ny >= 0 && ny < 9) {
+                                if(board[ny][nx].value.equals("💣")) {
+                                    fail(y, x);
+                                    break;
+                                }
+                                else {
+                                    if(!board[ny][nx].opened) {
+                                        board[ny][nx].opened = true;
+                                        opened_count++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
                 else if(board[y][x].value.equals(".")) search(y, x);
                 else if(board[y][x].value.equals("💣")) fail(y, x);
                 else {
@@ -115,7 +151,7 @@ class Board {
                     opened_count++;
                 }
                 break;
-        
+
             case "F":
                 board[y][x].flaged = !board[y][x].flaged;
                 break;
@@ -157,7 +193,12 @@ public class App {
             String command;
             y = Integer.parseInt(st.nextToken());
             x = Integer.parseInt(st.nextToken());
-            command = st.nextToken();
+            if(st.hasMoreTokens()) {
+                command = st.nextToken();
+            }
+            else {
+                command = "O";
+            }
             if(x > 9 || x < 1 || y > 9 || y < 1) {
                 System.out.println("wrong number!");
                 continue;
@@ -169,12 +210,10 @@ public class App {
                 break;
             }
             if(board.failed()) {
-                System.out.println("Oh... You failed...");
+                System.out.println("Oh... You failed... You want a retry?");
                 break;
             }
 
         }
-        
-
     }
 }
