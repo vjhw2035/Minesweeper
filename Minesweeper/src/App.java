@@ -74,7 +74,7 @@ class Board {
             for (int j = 0; j < 9; j++) {
                 if(board[i][j].flaged) System.out.printf("%-3s", "🚩");
                 else if(!board[i][j].opened) System.out.printf("%-3s", "■");
-                else System.out.printf("%-3s", (board[i][j].value + " "));
+                else System.out.printf("%-3s", (board[i][j].value));
             }
             System.out.println();
         }
@@ -98,7 +98,7 @@ class Board {
         }
     }
 
-    boolean arround(int y, int x) {
+    boolean arround_flagcnt_check(int y, int x) {
         int flagcnt = 0;
         for(int dir = 0; dir < 8; dir++) {
             int ny = y + dy[dir];
@@ -108,10 +108,20 @@ class Board {
             }
         }
         String flagcount = Integer.toString(flagcnt);
-        if (board[y][x].value.equals(flagcount)) {
-            return true;
+        return (board[y][x].value.equals(flagcount));
+    }
+
+    void open(int y, int x) {
+        if (!board[y][x].opened) {
+            if(board[y][x].value.equals(".")) search(y, x);
+            else if(board[y][x].value.equals("💣") && !board[y][x].flaged) {
+                fail(y, x);
+            }
+            else {
+                board[y][x].opened = true;
+                opened_count++;
+            }
         }
-        else return false;
     }
 
     void Command(int y, int x, String command) {
@@ -121,39 +131,30 @@ class Board {
         switch (command) {
             case "O":
                 if(board[y][x].flaged) {
-                    System.out.println("You cannot open square flaged!");
+                    System.out.println("You cannot open flaged square!");
                 }
                 else if(board[y][x].opened) {
-                    if(!arround(y, x)) System.out.println("You aleady open this square");
+                    if(!arround_flagcnt_check(y, x)){
+                        System.out.println("You aleady open this square");
+                    }
                     else {
                         for(int dir = 0; dir < 8; dir++) {
                             int ny = y + dy[dir];
                             int nx = x + dx[dir];
                             if(nx >= 0 && nx < 9 && ny >= 0 && ny < 9) {
-                                if(board[ny][nx].value.equals("💣")) {
-                                    fail(y, x);
-                                    break;
-                                }
-                                else {
-                                    if(!board[ny][nx].opened) {
-                                        board[ny][nx].opened = true;
-                                        opened_count++;
-                                    }
-                                }
+                                if(!board[ny][nx].flaged) open(ny, nx);
+                                if(failed()) break;
                             }
                         }
                     }
                 }
-                else if(board[y][x].value.equals(".")) search(y, x);
-                else if(board[y][x].value.equals("💣")) fail(y, x);
-                else {
-                    board[y][x].opened = true;
-                    opened_count++;
-                }
+                else open(y, x);
                 break;
-
+        
             case "F":
-                board[y][x].flaged = !board[y][x].flaged;
+                if(!board[y][x].opened) {
+                    board[y][x].flaged = !board[y][x].flaged;
+                }
                 break;
             default:
                 System.out.println("Please give me correct command");
@@ -169,6 +170,12 @@ class Board {
     void fail(int y, int x) {
         for(int i = 0; i < 9; i++) {
             for(int j = 0; j < 9; j++) {
+                if(board[i][j].flaged) {
+                    if(!board[i][j].value.equals("💣")) {
+                        board[i][j].value = "⛝";
+                        board[i][j].flaged = false;
+                    }
+                }
                 board[i][j].opened = true;
             }
         }
