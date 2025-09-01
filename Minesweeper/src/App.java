@@ -88,7 +88,7 @@ class Board {
             int nx = x + dx[dir];
             if(nx >= 0 && nx < 9 && ny >= 0 && ny < 9) {
                 if(!board[ny][nx].opened) {
-                    if(board[ny][nx].value == ".") search(ny, nx);
+                    if(board[ny][nx].value.equals(".")) search(ny, nx);
                     else {
                         board[ny][nx].opened = true;
                         opened_count++;
@@ -192,9 +192,9 @@ public class App {
     public static void main(String[] args) throws IOException {
         Board board = new Board();
         board.show();
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
         while(true) {
-            BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
             StringTokenizer st = new StringTokenizer(br.readLine());
             int y, x;
             String command;
