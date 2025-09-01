@@ -24,7 +24,7 @@ class Board {
     Board() {
         for (int i = 0; i < 9; i++) {
             for (int j = 0; j < 9; j++) {
-                board[i][j] = new Square("□");
+                board[i][j] = new Square(".");
             }
         }
 
@@ -63,11 +63,18 @@ class Board {
 
     void show() {
         System.out.println("result square : " + (81 - opened_count));
+        System.out.print("   ");
+        for (int j = 0; j < 9; j++) {
+            System.out.printf("%-3d", j + 1);
+        }
+        System.out.println();
+
         for (int i = 0; i < 9; i++) {
+            System.out.printf("%-3d", i + 1);
             for (int j = 0; j < 9; j++) {
-                if(board[i][j].flaged) System.out.print("▶ ");
-                else if(!board[i][j].opened) System.out.print("■ ");
-                else System.out.print(board[i][j].value + " ");
+                if(board[i][j].flaged) System.out.printf("%-3s", "🚩");
+                else if(!board[i][j].opened) System.out.printf("%-3s", "■ ");
+                else System.out.printf("%-3s", (board[i][j].value + " "));
             }
             System.out.println();
         }
@@ -81,7 +88,7 @@ class Board {
             int nx = x + dx[dir];
             if(nx >= 0 && nx < 9 && ny >= 0 && ny < 9) {
                 if(!board[ny][nx].opened) {
-                    if(board[ny][nx].value == "□") search(ny, nx);
+                    if(board[ny][nx].value == ".") search(ny, nx);
                     else {
                         board[ny][nx].opened = true;
                         opened_count++;
@@ -101,7 +108,7 @@ class Board {
                     System.out.println("You cannot open square flaged!");
                 }
                 else if(board[y][x].opened) System.out.println("You aleady open this square");
-                else if(board[y][x].value.equals("□")) search(y, x);
+                else if(board[y][x].value.equals(".")) search(y, x);
                 else if(board[y][x].value.equals("💣")) fail(y, x);
                 else {
                     board[y][x].opened = true;
