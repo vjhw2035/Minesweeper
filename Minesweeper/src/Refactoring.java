@@ -65,6 +65,12 @@ class Board {
         this.mines = mines;
 
         grid = new Cell[rows][cols];
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                grid[r][c] = new Cell();
+            }
+        }
+        
         Set<Integer> mine_location = new HashSet<>();
         while(mine_location.size() < mines) {
             int random = (int)(Math.random() * rows * cols);
@@ -76,9 +82,8 @@ class Board {
             int loc = (int)it.next();
             int row = loc / cols;
             int col = loc % cols;
-            grid[row][col].setVal("💣");
+            grid[row][col].setBomb();
         }
-        int[][] minecnt = new int[rows][cols];
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
                 if (grid[r][c].isBomb()) {
@@ -86,14 +91,15 @@ class Board {
                         int nr = r + dir[0];
                         int nc = c + dir[1];
                         if (isValid(nr, nc)) {
-                            minecnt[nr][nc]++;
+                            if(!grid[nr][nc].isBomb()) {
+                                int cnt = grid[nr][nc].getVal() + 1;
+                                grid[nr][nc].setVal(cnt);
+                            }
                         }
                     }
                 }
             }
         }
-        
-
     }
 
     boolean isGameOver() {
@@ -109,24 +115,28 @@ class Board {
 class Cell {
     private boolean opened;
     private boolean flaged;
-    private String value;
+    private int value;
 
     Cell() {
         this.opened = false;
         this.flaged = false;
-        this.value = ".";
+        this.value = 0;
     }
 
-    void setVal(String val) {
+    void setVal(int val) {
         this.value = val;
     }
 
-    String getVal() {
+    int getVal() {
         return this.value;
     }
 
+    void setBomb() {
+        this.value = -1;
+    }
+
     boolean isBomb() {
-        return this.value.equals("💣");
+        return this.value == -1;
     }
 
     boolean isOpen() {
@@ -141,8 +151,12 @@ class Cell {
         return this.flaged;
     }
 
-    void flagCell() {
-        this.flaged = !this.flaged;
+    void flag() {
+        this.flaged = true;
+    }
+
+    void unflag() {
+        this.flaged = false;
     }
 }
 
