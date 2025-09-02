@@ -48,6 +48,7 @@ enum GameState {
 class Board {
     private Cell[][] grid;
     private int rows, cols, mines;
+    private GameState gameState;
     private static final int[][] Directions = {
         {-1, -1}, {-1, 0}, {-1, 1},
         {0, -1},           {0, 1},
@@ -63,6 +64,7 @@ class Board {
         this.rows = rows;
         this.cols = cols;
         this.mines = mines;
+        this.gameState = GameState.RUNNING;
 
         grid = new Cell[rows][cols];
         for (int r = 0; r < rows; r++) {
@@ -103,7 +105,7 @@ class Board {
     }
 
     public boolean isGameOver() {
-        return true;
+        return (gameState != GameState.RUNNING);
     }
 
     public void applyCommand(Command command) {
@@ -122,6 +124,9 @@ class Board {
 
     public Cell[][] getGrid() {
         return grid;
+    }
+    public GameState getGameState() {
+        return this.gameState;
     }
 }
 
@@ -210,14 +215,32 @@ class Renderer {
                 }
             }
         }
-        System.out.println("result square : " + (81 - opened_count));
+        System.out.println("result square : " + (board.getCols() * board.getRows() - opened_count));
     }
 }
 
 // 입력 처리
 class InputHandler {
-    public Command getCommand(String str) {
-        return new Command();
+    private BufferedReader br;
+    
+    InputHandler() {
+        br = new BufferedReader(new InputStreamReader(System.in));
+    }
+
+    public Command getCommand() {
+        StringTokenizer st = new StringTokenizer(br.readLine());
+        int r = Integer.parseInt(st.nextToken());
+        int c = Integer.parseInt(st.nextToken());
+        String commandstr = st.nextToken();
+        ActionType action;
+        while(!commandstr.equals("o") && !commandstr.equals("f")) {
+            System.out.println("Not correct command. Please enter \"o\" or \"f\"");
+            commandstr = br.readLine();
+        }
+        if(commandstr.equals("o")) action =  ActionType.OPEN;
+        else if(commandstr.equals("f")) action = ActionType.FLAG;
+
+        return new Command(r, c, );
     }
 }
 
@@ -225,14 +248,20 @@ class InputHandler {
 class Command {
     private int row, col;
     private ActionType action;
+
+    Command(int row, int col, ActionType action) {
+        this.row = row;
+        this.col = col;
+        this.action = action;
+    }
 }
 
 enum ActionType {
-    OPEN, FLAG, 
+    OPEN, FLAG;
 }
 
 public class Refactoring {
-    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    
 
     
 }

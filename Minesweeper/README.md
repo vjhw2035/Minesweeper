@@ -24,3 +24,4 @@ java src/Main
 - 폭탄 = -1, 주위 폭탄 수에 따라 0~8.
 - 변수 타입 변경에 따라 별도의 int[][]를 두지 않고 직접 누적.
 - Cell의 상태를 CellState로 선언하여 사용 -> 그에 따라 opened와 flagged를 삭제
+- 
