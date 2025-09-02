@@ -109,6 +109,20 @@ class Board {
     public void applyCommand(Command command) {
 
     }
+
+    public int getRows() {
+        return rows;
+    }
+    public int getCols() {
+        return cols;
+    }
+    public int getMines() {
+        return mines;
+    }
+
+    public Cell[][] getGrid() {
+        return grid;
+    }
 }
 
 enum CellState {
@@ -160,12 +174,43 @@ class Cell {
     public void unflag() {
         state = CellState.CLOSED;
     }
+
+    public CellState getcellstate() {
+        return this.state;
+    }
 }
 
 // 보드 출력
 class Renderer {
     public void render(Board board) {
-        
+        int opened_count = 0;
+        System.out.print("   ");
+        for (int c = 0; c < board.getCols(); c++) {
+            System.out.printf("%-3d", c + 1);
+        }
+        System.out.println();
+        Cell[][] rGrid = board.getGrid();
+        for(int r = 0; r < board.getRows(); r++) {
+            System.out.printf("%-3d", r + 1);
+            for(int c = 0; c < board.getCols(); c++) {
+                switch(rGrid[r][c].getcellstate()) {
+                    case CLOSED:
+                        System.out.printf("%-3s", "■");
+                        break;
+                    case FLAGGED:
+                        System.out.printf("%-3s", "🚩");
+                        break;
+                    case OPENED:
+                        int val = rGrid[r][c].getVal();
+                        if(val == -1) System.out.printf("%-3s", "💥");
+                        else if(val == 0) System.out.printf("%-3s", ".");
+                        else System.out.printf("%-3d", val);
+                        opened_count++;
+                        break;
+                }
+            }
+        }
+        System.out.println("result square : " + (81 - opened_count));
     }
 }
 
