@@ -102,87 +102,92 @@ class Board {
         }
     }
 
-    boolean isGameOver() {
+    public boolean isGameOver() {
         return true;
     }
 
-    void applyCommand(Command command) {
+    public void applyCommand(Command command) {
 
     }
 }
 
+enum CellState {
+    CLOSED, OPENED, FLAGGED;
+}
+
 // 각각의 칸
 class Cell {
-    private boolean opened;
-    private boolean flaged;
+    private CellState state;
     private int value;
 
     Cell() {
-        this.opened = false;
-        this.flaged = false;
+        this.state = CellState.CLOSED;
         this.value = 0;
     }
 
-    void setVal(int val) {
+    public void setVal(int val) {
         this.value = val;
     }
 
-    int getVal() {
+    public int getVal() {
         return this.value;
     }
 
-    void setBomb() {
+    public void setBomb() {
         this.value = -1;
     }
 
-    boolean isBomb() {
+    public boolean isBomb() {
         return this.value == -1;
     }
 
-    boolean isOpen() {
-        return this.opened;
+    public boolean isOpen() {
+        return state == CellState.OPENED;
     }
     
-    void openCell() {
-        this.opened = true;
+    public void openCell() {
+        state = CellState.OPENED;
     }
 
-    boolean isFlaged() {
-        return this.flaged;
+    public boolean isFlaged() {
+        return state == CellState.FLAGGED;
     }
 
-    void flag() {
-        this.flaged = true;
+    public void flag() {
+        state = CellState.FLAGGED;
     }
 
-    void unflag() {
-        this.flaged = false;
+    public void unflag() {
+        state = CellState.CLOSED;
     }
 }
 
 // 보드 출력
 class Renderer {
     public void render(Board board) {
-
+        
     }
 }
 
-// 
+// 입력 처리
 class InputHandler {
     public Command getCommand(String str) {
         return new Command();
     }
 }
 
+// 입력의 동작
 class Command {
     private int row, col;
     private ActionType action;
 }
 
 enum ActionType {
-    OPEN, FLAG
+    OPEN, FLAG, 
 }
 
 public class Refactoring {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+
     
 }
