@@ -228,19 +228,19 @@ class InputHandler {
     }
 
     public Command getCommand() {
-        StringTokenizer st = new StringTokenizer(br.readLine());
-        int r = Integer.parseInt(st.nextToken());
-        int c = Integer.parseInt(st.nextToken());
-        String commandstr = st.nextToken();
-        ActionType action;
-        while(!commandstr.equals("o") && !commandstr.equals("f")) {
-            System.out.println("Not correct command. Please enter \"o\" or \"f\"");
-            commandstr = br.readLine();
+        while(true) {
+            try {
+                System.out.println("Enter command \"O\" or \"F\"");
+                String str = br.readLine();
+                if(str == null) {
+                    System.out.println("입력이 종료되었습니다.");
+                    break;
+                }
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
         }
-        if(commandstr.equals("o")) action =  ActionType.OPEN;
-        else if(commandstr.equals("f")) action = ActionType.FLAG;
-
-        return new Command(r, c, );
     }
 }
 
@@ -257,7 +257,7 @@ class Command {
 }
 
 enum ActionType {
-    OPEN, FLAG;
+    OPEN, FLAG, UNKNOWN;
 }
 
 public class Refactoring {
