@@ -5,11 +5,8 @@ class Game {
     private Board board;
     private InputHandler input;
     private Renderer renderer;
-    private Level level;
-
 
     public void start(Level level) {
-        this.level = level;
         board = new Board(level.getRows(), level.getCols(), level.getMines());
         while(!board.isGameOver()) {
             renderer.render(board);
@@ -109,6 +106,24 @@ class Board {
     }
 
     public void applyCommand(Command command) {
+        int r = command.getRow();
+        int c = command.getCol();
+        ActionType action = command.getAction();
+
+        Cell cell = grid[r][c];
+
+        switch (action) {
+            case OPEN:
+                openCell(r, c);
+                break;
+        
+            case FLAG:
+                if(cell.isFlaged()) cell.unflag();
+                else cell.flag();
+                break;
+        }
+    }
+    public void openCell(int r, int c) {
         
     }
 
@@ -230,13 +245,16 @@ class InputHandler {
     public Command getCommand(Board board) {
         while(true) {
             try {
-                System.out.println("Enter command \"O\" or \"F\"");
+                System.out.println("Enter row, col, command \"O\" or \"F\"");
                 String str = br.readLine();
                 if(str == null) {
                     throw new NullPointerException();
                 }
 
                 StringTokenizer st = new StringTokenizer(str);
+                if(st.countTokens() < 3) {
+                    throw new NoSuchElementException("row, col, command 순으로 전부 입력해주세요.");
+                }
                 int r = Integer.parseInt(st.nextToken());
                 int c = Integer.parseInt(st.nextToken());
                 String a = st.nextToken();
@@ -253,10 +271,11 @@ class InputHandler {
                     action = ActionType.FLAG;
                 }
                 else {
-                    throw new IllegalArgumentException("올바르지 않은 명령어입니다.");
+                    System.out.println("올바르지 않은 명령어입니다.");
+                    continue;
                 }
 
-                return new Command(0, 0, action);
+                return new Command(r, c, action);
             }
             catch (IOException e) {
                 e.printStackTrace();
@@ -284,10 +303,22 @@ class Command {
         this.col = col;
         this.action = action;
     }
+
+    public int getRow() {
+        return row;
+    }
+
+    public int getCol() {
+        return col;
+    }
+
+    public ActionType getAction() {
+        return action;
+    }
 }
 
 enum ActionType {
-    OPEN, FLAG, UNKNOWN;
+    OPEN, FLAG;
 }
 
 public class Refactoring {
