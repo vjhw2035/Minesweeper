@@ -48,10 +48,43 @@ ex> ArithmeticException : 어떤 수를 0으로 나누는 것과 같이 비정�
 - 똑같은 분류를 Checked / Unchecked 로 재분류한 이유 : 코드적 관점에서 예외 처리 동작을 필수 지정 유무 판별. -> Checked Exception은 반드시 예외 처리를 해야함.
 
 # 예외 처리 (try - catch 문)
-try 블록에는 예외발생 가능 코드가 위치 
-if 코드에 오류가 발생
--> 오류 종류(예외 클래스)에 맞는 catch 문으로 가서 catch 블록 안에 있는 코드를 실행 (try 블록에서는 더이상 진행되지 않음)
+- try 블록에는 예외 발생 가능 코드가 위치 
+    if try 블록 코드에 오류가 발생
+    -> 오류 종류(예외 클래스)에 맞는 catch 문으로 가서 catch 블록 안에 있는 코드를 실행 (try 블록에서는 더이상 진행되지 않음)
 
-if 오류가 발생 X 
--> catch 문은 실행 X
+    if try 블록 코드에 오류가 발생 X
+    -> catch 문은 실행 X
 
+
+try {
+    로직
+}
+catch (XXX e) {
+    예외 처리
+}
+
+XXX 자리에 어떤 예외인지 넣는데 ex> catch (ArithmeticException e)
+일일이 다 작성해주는건 무리이므로 부모 클래스인 Exception 클래스를 이용해 catch (Exception e) 으로 나타낼 수 있다.
+but, 어떤 예외인지는 알 수 없어진다.
+-> printStackTrace() 메소드를 catch 문 내에 추가하여 어떤 예외 상황인지 세세하게 출력 가능하다.
+    ( getMessage() : 발생한 예외 클래스의 인스턴스에 저장된 메세지 얻을 수 있다. )
+
+## try - catch - finally
+
+try 문 내에서 예외가 발생했을 경우 예외 발생 시점 이후의 블록은 실행하지 않고 바로 catch로 넘어간다.
+하지만 예외가 발생하더라도 반드시 실행해야하는 부분이 있다면 Fianlly 문으로 처리 가능하다.
+
+try {
+    로직
+}
+catch {
+    예외 처리
+}
+finally {
+    반드시 실행
+}
+
+예외 발생 : try - catch - finally
+예외 없음 : try - finally
+
+## multi - catch 문

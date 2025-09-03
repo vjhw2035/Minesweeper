@@ -13,7 +13,7 @@ class Game {
         board = new Board(level.getRows(), level.getCols(), level.getMines());
         while(!board.isGameOver()) {
             renderer.render(board);
-            Command cmd = input.getCommand();
+            Command cmd = input.getCommand(board);
             board.applyCommand(cmd);
         }
     }
@@ -109,7 +109,7 @@ class Board {
     }
 
     public void applyCommand(Command command) {
-
+        
     }
 
     public int getRows() {
@@ -227,18 +227,48 @@ class InputHandler {
         br = new BufferedReader(new InputStreamReader(System.in));
     }
 
-    public Command getCommand() {
+    public Command getCommand(Board board) {
         while(true) {
             try {
                 System.out.println("Enter command \"O\" or \"F\"");
                 String str = br.readLine();
                 if(str == null) {
-                    System.out.println("입력이 종료되었습니다.");
-                    break;
+                    throw new NullPointerException();
                 }
+
+                StringTokenizer st = new StringTokenizer(str);
+                int r = Integer.parseInt(st.nextToken());
+                int c = Integer.parseInt(st.nextToken());
+                String a = st.nextToken();
+
+                if(r >= board.getRows() || r < 0 || c >= board.getCols() || c < 0) {
+                    throw new IllegalArgumentException();
+                }
+                a = a.toUpperCase();
+                ActionType action;
+                if (a.equals("O")) {
+                    action = ActionType.OPEN;
+                }
+                else if (a.equals("F")) {
+                    action = ActionType.FLAG;
+                }
+                else {
+                    throw new IllegalArgumentException("올바르지 않은 명령어입니다.");
+                }
+
+                return new Command(0, 0, action);
             }
             catch (IOException e) {
                 e.printStackTrace();
+            }
+            catch (NullPointerException e) {
+                System.out.println("입력 형식이 NULL입니다.");
+            }
+            catch (NumberFormatException e) {
+                System.out.println("좌표에는 숫자만 입력해주세요.");
+            }
+            catch (IllegalArgumentException e) {
+                System.out.println("좌표가 보드를 벗어났습니다.");
             }
         }
     }
