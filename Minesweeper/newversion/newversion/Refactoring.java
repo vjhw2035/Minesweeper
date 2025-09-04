@@ -350,7 +350,7 @@ class InputHandler {
 
                 StringTokenizer st = new StringTokenizer(str);
                 if(st.countTokens() < 3) {
-                    throw new NoSuchElementException("row, col, command 순으로 전부 입력해주세요.");
+                    throw new NoSuchElementException();
                 }
                 int r = Integer.parseInt(st.nextToken()) - 1;
                 int c = Integer.parseInt(st.nextToken()) - 1;
@@ -385,6 +385,9 @@ class InputHandler {
             }
             catch (IllegalArgumentException e) {
                 System.out.println("좌표가 보드를 벗어났습니다.");
+            }
+            catch (NoSuchElementException e) {
+                System.out.println("row, col, command 순으로 전부 입력해주세요.");
             }
         }
     }
