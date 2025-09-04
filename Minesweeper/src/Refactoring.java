@@ -13,11 +13,14 @@ class Game {
             Command cmd = input.getCommand(board);
             board.applyCommand(cmd);
         }
+
+        renderer.render(board);
     }
 }
 
 //난이도 조절 easy, normal, hard, 사용자 설정은 추후
 enum Level {
+    TBA(0, 0, 0),
     EASY(9, 9, 16),
     NORMAL(16, 16, 40),
     HARD(16, 30, 99);
@@ -37,6 +40,8 @@ enum Level {
     public int getMines() { return mines; }
 }
 
+// ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ//
+
 enum GameState {
     RUNNING, WON, LOST;
 }
@@ -45,11 +50,13 @@ enum GameState {
 class Board {
     private Cell[][] grid;
     private int rows, cols, mines;
+    private int totalCell;
+    private int opened_count;
     private GameState gameState;
     private static final int[][] Directions = {
         {-1, -1}, {-1, 0}, {-1, 1},
-        {0, -1},           {0, 1},
-        {1, -1}, {1, 0}, {1, 1}
+        {0,  -1},          {0,  1},
+        {1,  -1}, {1,  0}, {1,  1}
     };
     private boolean isValid(int row, int col) {
         return row >= 0 && row < rows 
@@ -61,6 +68,8 @@ class Board {
         this.rows = rows;
         this.cols = cols;
         this.mines = mines;
+        this.totalCell = rows * cols;
+        this.opened_count = 0;
         this.gameState = GameState.RUNNING;
 
         grid = new Cell[rows][cols];
@@ -104,6 +113,14 @@ class Board {
     public boolean isGameOver() {
         return (gameState != GameState.RUNNING);
     }
+    
+    public void gameOver() {
+        this.gameState = GameState.LOST;
+    }
+
+    public void gameClear() {
+        this.gameState = GameState.WON;
+    }
 
     public void applyCommand(Command command) {
         int r = command.getRow();
@@ -121,10 +138,53 @@ class Board {
                 if(cell.isFlaged()) cell.unflag();
                 else cell.flag();
                 break;
+
+            case ARROUND:
+                arroundCell(r, c);
+                break;
         }
     }
     public void openCell(int r, int c) {
-        
+        Cell cell = grid[r][c];
+        if(cell.isClose()) {
+            int val = cell.getVal();
+            cell.open();
+            addOpenCnt();
+
+            switch (val) {
+                case -1:
+                    gameOver();
+                    cell.setVal(-2);
+                    return;
+                case 0:
+                    search(r, c);
+                    break;
+            }
+            if (getOpenedcnt() + getMines() == getTotalCell()) {
+                gameClear();
+            }
+        }
+    }
+
+    public void arroundCell(int r, int c) {
+        int flagCnt = grid[r][c].getVal();
+        for(int[] dir : Directions) {
+            int nr = r + dir[0];
+            int nc = c + dir[1];
+            if (isValid(nr, nc) && grid[r][c].isFlaged()) flagCnt--;
+        }
+        if(flagCnt == 0) search(r, c);
+        else return;
+    }
+
+    public void search(int r, int c) {
+        for(int[] dir : Directions) {
+            int nr = r + dir[0];
+            int nc = c + dir[1];
+            if (isValid(nr, nc)) {
+                openCell(nr, nc);
+            }
+        }
     }
 
     public int getRows() {
@@ -136,6 +196,15 @@ class Board {
     public int getMines() {
         return mines;
     }
+    public int getTotalCell() { 
+        return totalCell;
+    }
+    public void addOpenCnt() {
+        opened_count++;
+    }
+    public int getOpenedcnt() {
+        return opened_count;
+    }
 
     public Cell[][] getGrid() {
         return grid;
@@ -144,6 +213,10 @@ class Board {
         return this.gameState;
     }
 }
+
+
+// ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ//
+
 
 enum CellState {
     CLOSED, OPENED, FLAGGED;
@@ -178,9 +251,13 @@ class Cell {
     public boolean isOpen() {
         return state == CellState.OPENED;
     }
+
+    public boolean isClose() { 
+        return state == CellState.CLOSED;
+    }
     
-    public void openCell() {
-        state = CellState.OPENED;
+    public void open() {
+        if(isClose()) state = CellState.OPENED;
     }
 
     public boolean isFlaged() {
@@ -200,10 +277,13 @@ class Cell {
     }
 }
 
+// ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ//
+
+
 // 보드 출력
 class Renderer {
     public void render(Board board) {
-        int opened_count = 0;
+        System.out.println("\nresult square : " + (board.getTotalCell() - board.getOpenedcnt()) + "\n");
         System.out.print("   ");
         for (int c = 0; c < board.getCols(); c++) {
             System.out.printf("%-3d", c + 1);
@@ -222,17 +302,27 @@ class Renderer {
                         break;
                     case OPENED:
                         int val = rGrid[r][c].getVal();
-                        if(val == -1) System.out.printf("%-3s", "💥");
-                        else if(val == 0) System.out.printf("%-3s", ".");
-                        else System.out.printf("%-3d", val);
-                        opened_count++;
+                        switch(val) {
+                            case -1:
+                                System.out.printf("%-3s", "💣");
+                                break;
+                            case 0:
+                                System.out.printf("%-3s", ".");
+                                break;
+                            case -2:
+                                System.out.printf("%-3s", "💥");
+                                break;
+                            default: 
+                                System.out.printf("%-3d", val);
+                        }
                         break;
                 }
             }
         }
-        System.out.println("result square : " + (board.getCols() * board.getRows() - opened_count));
     }
 }
+
+// ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ//
 
 // 입력 처리
 class InputHandler {
@@ -245,7 +335,7 @@ class InputHandler {
     public Command getCommand(Board board) {
         while(true) {
             try {
-                System.out.println("Enter row, col, command \"O\" or \"F\"");
+                System.out.println("Enter row, col, (command \"O\" or \"F\" or \"A\")");
                 String str = br.readLine();
                 if(str == null) {
                     throw new NullPointerException();
@@ -264,17 +354,17 @@ class InputHandler {
                 }
                 a = a.toUpperCase();
                 ActionType action;
-                if (a.equals("O")) {
-                    action = ActionType.OPEN;
+                switch (a) {
+                    case "O": action = ActionType.OPEN;
+                    break;
+                    case "F": action = ActionType.FLAG;
+                    break;
+                    case "A": action = ActionType.ARROUND;
+                    break;
+                    default:
+                        System.out.println("올바르지 않은 명령어입니다.");
+                        continue;
                 }
-                else if (a.equals("F")) {
-                    action = ActionType.FLAG;
-                }
-                else {
-                    System.out.println("올바르지 않은 명령어입니다.");
-                    continue;
-                }
-
                 return new Command(r, c, action);
             }
             catch (IOException e) {
@@ -292,6 +382,9 @@ class InputHandler {
         }
     }
 }
+
+// ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ//
+
 
 // 입력의 동작
 class Command {
@@ -318,11 +411,38 @@ class Command {
 }
 
 enum ActionType {
-    OPEN, FLAG;
+    OPEN, FLAG, ARROUND;
 }
 
-public class Refactoring {
-    
+// ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ//
 
-    
+public class Refactoring {
+    public static void main(String[] args) throws IOException{
+        System.out.println("What Level you want? please choose one and Enter, EASY : E, NORMAL : N, HARD : H");
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        String lev = br.readLine();
+        lev.toUpperCase();
+        Level level = Level.TBA;
+        while(level == Level.TBA) {
+            switch (lev) {
+                case "E": 
+                case "EASY": 
+                    level = Level.EASY;
+                    break;
+                case "N":
+                case "NORMAL":
+                    level = Level.NORMAL;
+                    break;
+                case "H":
+                case "HARD":
+                    level = Level.HARD;
+                    break;
+                default:
+                    System.out.println("난이도를 다시 입력해주세요");
+                    continue;
+            }
+        }
+        Game game = new Game();
+        game.start(level);
+    }
 }

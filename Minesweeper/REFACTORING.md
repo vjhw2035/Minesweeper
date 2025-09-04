@@ -14,3 +14,4 @@
     1. IOException
     2. null 입력
     3. 잘못된 형식/좌표/command
+- 예외 처리 완료 및 입력 처리 완료
