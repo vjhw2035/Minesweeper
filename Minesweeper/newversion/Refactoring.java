@@ -6,14 +6,18 @@ class Game {
     private InputHandler input;
     private Renderer renderer;
 
-    public void start(Level level) {
-        board = new Board(level.getRows(), level.getCols(), level.getMines());
+    Game(Level level) {
+        this.board = new Board(level.getRows(), level.getCols(), level.getMines());
+        this.input = new InputHandler();
+        this.renderer = new Renderer();
+    }
+
+    public void start() {
         while(!board.isGameOver()) {
             renderer.render(board);
             Command cmd = input.getCommand(board);
             board.applyCommand(cmd);
         }
-
         renderer.render(board);
     }
 }
@@ -171,7 +175,7 @@ class Board {
         for(int[] dir : Directions) {
             int nr = r + dir[0];
             int nc = c + dir[1];
-            if (isValid(nr, nc) && grid[r][c].isFlaged()) flagCnt--;
+            if (isValid(nr, nc) && grid[nr][nc].isFlaged()) flagCnt--;
         }
         if(flagCnt == 0) search(r, c);
         else return;
@@ -318,6 +322,7 @@ class Renderer {
                         break;
                 }
             }
+            System.out.println();
         }
     }
 }
@@ -345,8 +350,8 @@ class InputHandler {
                 if(st.countTokens() < 3) {
                     throw new NoSuchElementException("row, col, command 순으로 전부 입력해주세요.");
                 }
-                int r = Integer.parseInt(st.nextToken());
-                int c = Integer.parseInt(st.nextToken());
+                int r = Integer.parseInt(st.nextToken()) - 1;
+                int c = Integer.parseInt(st.nextToken()) - 1;
                 String a = st.nextToken();
 
                 if(r >= board.getRows() || r < 0 || c >= board.getCols() || c < 0) {
@@ -420,10 +425,10 @@ public class Refactoring {
     public static void main(String[] args) throws IOException{
         System.out.println("What Level you want? please choose one and Enter, EASY : E, NORMAL : N, HARD : H");
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-        String lev = br.readLine();
-        lev.toUpperCase();
         Level level = Level.TBA;
         while(level == Level.TBA) {
+            String lev = br.readLine();
+            lev = lev.toUpperCase();
             switch (lev) {
                 case "E": 
                 case "EASY": 
@@ -442,7 +447,7 @@ public class Refactoring {
                     continue;
             }
         }
-        Game game = new Game();
-        game.start(level);
+        Game g = new Game(level);
+        g.start();
     }
 }
