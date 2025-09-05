@@ -31,7 +31,7 @@ class Game {
         }
         renderer.render(board);
         timer.gameEnd();
-        System.out.println("\n" + timer.howMuchTime().getSeconds() + "seconds");
+        System.out.println("\nGame Time: " + timer.howMuchTime().getSeconds() + "seconds");
     }
 }
 
