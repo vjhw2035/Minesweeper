@@ -2,6 +2,8 @@
 - App.java에서 구현 완료
 - Board 클래스에 너무 집중되어 있어 Refactoring.java에서 리팩토링.
 - Game 자체(Game), Board 구성(Board), 현 Board 상태 출력(Renderer), Square -> cell, 입력 처리(InputHandler), 입력에 의한 동작(Command)
+- Board -> Board와 BoardInitializer로 나눔
+    -> 첫 OPEN SAFETY 적용 및 Board의 책임 과다 해결.
 - Game 난이도 설정 가능하게 확장.(Level)
 - 주위의 폭탄 수에 따른 value 설정 방식 변경
     (주위 8칸을 탐색해서 바로 val 설정하는 방식) -> 
@@ -18,7 +20,7 @@
 
 
 ## 학습 사항
-- 각 클래스마다 역할 분담을 확실하게 해야 함. 유지, 보수, 가독성 등등에서 차이가 많이 남.
+- 각 클래스마다 역할 분담을 확실하게 해야 함. 유지, 보수, 가독성 등등에서 차이가 많이 남.   
 - 오류와 예외의 차이와 예외의 종류들
 - checked와 unchecked Exception의 차이와 예외들의 처리 방법
 - 패키지 구조로 리팩토링 버전 관리하기

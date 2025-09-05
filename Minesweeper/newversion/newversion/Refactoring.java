@@ -31,7 +31,7 @@ class Game {
         }
         renderer.render(board);
         timer.gameEnd();
-        System.out.println(timer.howMuchTime().getSeconds() + "seconds");
+        System.out.println("\n" + timer.howMuchTime().getSeconds() + "seconds");
     }
 }
 
@@ -41,6 +41,7 @@ enum Level {
     EASY(9, 9, 10),
     NORMAL(16, 16, 40),
     HARD(16, 30, 99);
+
 
     private final int rows;
     private final int cols;
