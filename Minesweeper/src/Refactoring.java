@@ -1,5 +1,3 @@
-package newversion;
-
 import java.io.*;
 import java.time.*;
 import java.util.*;
@@ -551,7 +549,6 @@ enum ActionType {
 
 public class Refactoring {
     public static void main(String[] args) throws IOException{
-        
         Game g = new Game();
         g.start();
     }
