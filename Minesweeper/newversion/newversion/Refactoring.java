@@ -147,8 +147,8 @@ class Board {
                     }
                     break;
     
-                case ARROUND:
-                    arroundCell(r, c);
+                case AROUND:
+                    aroundCell(r, c);
                     break;
             }
         }
@@ -174,7 +174,7 @@ class Board {
             }
         }
     
-        private void arroundCell(int r, int c) {
+        private void aroundCell(int r, int c) {
             if(grid[r][c].getcellstate() != CellState.OPENED) {
                 System.out.println("You cannot command \"A\" on Closed or Flagged Cell");
                 return;
@@ -489,7 +489,7 @@ class InputHandler {
                     break;
                     case "F": action = ActionType.FLAG;
                     break;
-                    case "A": action = ActionType.ARROUND;
+                    case "A": action = ActionType.AROUND;
                     break;
                     default:
                         System.out.println("올바르지 않은 명령어입니다.");
@@ -544,7 +544,7 @@ class Command {
 }
 
 enum ActionType {
-    OPEN, FLAG, ARROUND;
+    OPEN, FLAG, AROUND;
 }
 
 // ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ//
