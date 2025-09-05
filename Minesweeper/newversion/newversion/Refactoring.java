@@ -1,26 +1,37 @@
 package newversion;
 
 import java.io.*;
+import java.time.*;
 import java.util.*;
 
 class Game {
     private Board board;
     private InputHandler input;
     private Renderer renderer;
+    private Timer timer;
 
-    Game(Level level) {
-        this.board = new Board(level.getRows(), level.getCols(), level.getMines());
+    Game() {
         this.input = new InputHandler();
         this.renderer = new Renderer();
+        this.timer = new Timer();
     }
 
     public void start() {
+        Level level = input.getLevel();
+        this.board = new Board(level.getRows(), level.getCols(), level.getMines());
+        renderer.render(board);
+        Command firstcmd = input.getCommand(board);
+        board.applyCommand(firstcmd);
+        timer.gameStart();
+
         while(!board.isGameOver()) {
             renderer.render(board);
             Command cmd = input.getCommand(board);
             board.applyCommand(cmd);
         }
         renderer.render(board);
+        timer.gameEnd();
+        System.out.println(timer.howMuchTime().getSeconds() + "seconds");
     }
 }
 
@@ -52,6 +63,22 @@ enum GameState {
     RUNNING, WON, LOST;
 }
 
+class Timer {
+    private LocalTime start;
+    private LocalTime end;
+
+    public void gameStart() {
+        start = LocalTime.now();
+    }
+    public void gameEnd() {
+        end = LocalTime.now();
+    }
+    public Duration howMuchTime() {
+        Duration duration = Duration.between(start, end);
+        return duration;
+    }
+}
+
 // 보드
 class Board {
     private Cell[][] grid;
@@ -60,44 +87,216 @@ class Board {
     private int opened_count, flagged_count;
     private boolean initialized;
     private GameState gameState;
-    private static final int[][] Directions = {
-        {-1, -1}, {-1, 0}, {-1, 1},
-        {0,  -1},          {0,  1},
-        {1,  -1}, {1,  0}, {1,  1}
-    };
-    private boolean isValid(int row, int col) {
-        return row >= 0 && row < rows 
-        && col >= 0 && col < cols;
-    }
-
-    private void placeMines(int firstrow, int firstcol) {
-        Set<Integer> mine_location = new HashSet<>();
-        while(mine_location.size() < mines) {
-            int random = (int)(Math.random() * getRows() * getCols());
-            if(random != (firstrow * getCols() + firstcol)) {
-                mine_location.add(random); 
+    public final int[][] Directions = {
+            {-1, -1}, {-1, 0}, {-1, 1},
+            {0,  -1},          {0,  1},
+            {1,  -1}, {1,  0}, {1,  1}
+        };
+        public boolean isValid(int row, int col) {
+            return row >= 0 && row < rows 
+            && col >= 0 && col < cols;
+        }
+        
+        Board(int rows, int cols, int mines) {
+            this.rows = rows;
+            this.cols = cols;
+            this.mines = mines;
+            this.totalCell = rows * cols;
+            this.opened_count = 0;
+            this.initialized = false;
+            this.gameState = GameState.RUNNING;
+    
+            grid = new Cell[rows][cols];
+            for (int r = 0; r < rows; r++) {
+                for (int c = 0; c < cols; c++) {
+                    grid[r][c] = new Cell();
+                }
+            }
+        }
+    
+        public void applyCommand(Command command) {
+            int r = command.getRow();
+            int c = command.getCol();
+            ActionType action = command.getAction();
+            Cell cell = grid[r][c];
+    
+            if (action == ActionType.OPEN && !initialized ) {
+                BoardInitializer.initialize(this, r, c);
+            }
+    
+            switch (action) {
+                case OPEN:
+                    openCell(r, c);
+                    break;
+            
+                case FLAG:
+                    if(!cell.isFlagged()) {
+                        if(getFlaggedcnt() < getMines()) {
+                            addFlaggedcnt();
+                            cell.flag();
+                        }
+                        else {
+                            System.out.println("No more Flag");
+                            return;
+                        }
+                    }
+                    else {
+                        subFlaggedcnt();
+                        cell.unflag();
+                    }
+                    break;
+    
+                case ARROUND:
+                    arroundCell(r, c);
+                    break;
+            }
+        }
+        private void openCell(int r, int c) {
+            Cell cell = grid[r][c];
+            if(cell.isClose()) {
+                int val = cell.getVal();
+                cell.open();
+                addOpenCnt();
+    
+                switch (val) {
+                    case -1:
+                        gameOver();
+                        cell.setVal(-2);
+                        return;
+                    case 0:
+                        search(r, c);
+                        break;
+                }
+                if (getOpenedcnt() + getMines() == getTotalCell()) {
+                    gameClear();
+                }
+            }
+        }
+    
+        private void arroundCell(int r, int c) {
+            if(grid[r][c].getcellstate() != CellState.OPENED) {
+                System.out.println("You cannot command \"A\" on Closed or Flagged Cell");
+                return;
+            }
+            int flagCnt = grid[r][c].getVal();
+            for(int[] dir : Directions) {
+                int nr = r + dir[0];
+                int nc = c + dir[1];
+                if (isValid(nr, nc) && grid[nr][nc].isFlagged()) flagCnt--;
+            }
+            if(flagCnt <= 0) search(r, c);
+            else return;
+        }
+    
+        public void search(int r, int c) {
+            for(int[] dir : Directions) {
+                int nr = r + dir[0];
+                int nc = c + dir[1];
+                if (isValid(nr, nc) && grid[nr][nc].isClose()) {
+                    openCell(nr, nc);
+                }
             }
         }
 
-        Iterator<Integer> it = mine_location.iterator();
-        while(it.hasNext()) {
-            int loc = (int)it.next();
-            int row = loc / getCols();
-            int col = loc % getCols();
-            grid[row][col].setBomb();
+        public void allOpen() {
+            for(Cell[] row : getGrid()) {
+                for(Cell col : row) {
+                    if(col.isFlagged()) {
+                        if(col.getVal() != -1) {
+                            col.setVal(-3);
+                            col.open();
+                        }
+                    }
+                    else col.open();
+                }
+            }
         }
-    }
-    private void calculate() {
-        for (int r = 0; r < rows; r++) { 
-            for (int c = 0; c < cols; c++) { 
-                if (grid[r][c].isBomb()) { 
-                    for (int[] dir : Directions) { 
+    
+        public int getRows() {
+            return rows;
+        }
+        public int getCols() {
+            return cols;
+        }
+        public int getMines() {
+            return mines;
+        }
+        public int getTotalCell() { 
+            return totalCell;
+        }
+        public void addOpenCnt() {
+            opened_count++;
+        }
+        public int getOpenedcnt() {
+            return opened_count;
+        }
+        public void addFlaggedcnt() {
+            flagged_count++;
+        }
+        public void subFlaggedcnt() {
+            flagged_count--;
+        }
+        public int getFlaggedcnt() {
+            return flagged_count;
+        }
+        public Cell[][] getGrid() {
+            return grid;
+        }
+        public GameState getGameState() {
+            return this.gameState;
+        }
+        public boolean isGameOver() {
+            return (gameState != GameState.RUNNING);
+        }
+        public void gameOver() {
+            this.gameState = GameState.LOST;
+        }
+        public void gameClear() {
+            this.gameState = GameState.WON;
+        }
+        public void setInitialized(boolean bool) {
+            this.initialized = bool;
+        }
+        public boolean getInitialized() {
+            return this.initialized;
+        }
+}
+class BoardInitializer {
+        public static void initialize(Board board, int safeRow, int safeCol) {
+            placeMines(board, safeRow, safeCol);
+            calculateNumbers(board);
+            board.setInitialized(true);
+        }
+    
+        private static void placeMines(Board board, int safeRow, int safeCol) {
+            Set<Integer> mine_location = new HashSet<>();
+            while(mine_location.size() < board.getMines()) {
+                int random = (int)(Math.random() * board.getRows() * board.getCols());
+                if(random != (safeRow * board.getCols() + safeCol)) {
+                    mine_location.add(random); 
+                }
+            }
+    
+            Iterator<Integer> it = mine_location.iterator();
+            while(it.hasNext()) {
+                int loc = (int)it.next();
+                int row = loc / board.getCols();
+                int col = loc % board.getCols();
+                board.getGrid()[row][col].setBomb();
+            }
+        }
+    
+        private static void calculateNumbers(Board board) {
+            for (int r = 0; r < board.getRows(); r++) { 
+                for (int c = 0; c < board.getCols(); c++) { 
+                    if (board.getGrid()[r][c].isBomb()) { 
+                        for (int[] dir : board.Directions) { 
                         int nr = r + dir[0]; 
                         int nc = c + dir[1]; 
-                        if (isValid(nr, nc)) { 
-                            if(!grid[nr][nc].isBomb()) { 
-                                int cnt = grid[nr][nc].getVal() + 1; 
-                                grid[nr][nc].setVal(cnt); 
+                        if (board.isValid(nr, nc)) { 
+                            if(!board.getGrid()[nr][nc].isBomb()) { 
+                                int cnt = board.getGrid()[nr][nc].getVal() + 1; 
+                                board.getGrid()[nr][nc].setVal(cnt); 
                             }
                         }
                     }         
@@ -105,154 +304,8 @@ class Board {
             }
         }
     }
-    
-
-    Board(int rows, int cols, int mines) {
-        this.rows = rows;
-        this.cols = cols;
-        this.mines = mines;
-        this.totalCell = rows * cols;
-        this.opened_count = 0;
-        this.initialized = false;
-        this.gameState = GameState.RUNNING;
-
-        grid = new Cell[rows][cols];
-        for (int r = 0; r < rows; r++) {
-            for (int c = 0; c < cols; c++) {
-                grid[r][c] = new Cell();
-            }
-        }
-    }
-
-    public void applyCommand(Command command) {
-        int r = command.getRow();
-        int c = command.getCol();
-        ActionType action = command.getAction();
-
-        Cell cell = grid[r][c];
-
-        switch (action) {
-            case OPEN:
-                if(!initialized) {
-                    placeMines(r, c);
-                    calculate();
-                    initialized = true;
-                }
-                openCell(r, c);
-                break;
-        
-            case FLAG:
-                if(!cell.isFlaged()) {
-                    if(getFlaggedcnt() < getMines()) {
-                        addFlaggedcnt();
-                        cell.flag();
-                    }
-                    else {
-                        System.out.println("No more Flag");
-                        return;
-                    }
-                }
-                else {
-                    subFlaggedcnt();
-                    cell.unflag();
-                }
-                break;
-
-            case ARROUND:
-                arroundCell(r, c);
-                break;
-        }
-    }
-    private void openCell(int r, int c) {
-        Cell cell = grid[r][c];
-        if(cell.isClose()) {
-            int val = cell.getVal();
-            cell.open();
-            addOpenCnt();
-
-            switch (val) {
-                case -1:
-                    gameOver();
-                    cell.setVal(-2);
-                    return;
-                case 0:
-                    search(r, c);
-                    break;
-            }
-            if (getOpenedcnt() + getMines() == getTotalCell()) {
-                gameClear();
-            }
-        }
-    }
-
-    private void arroundCell(int r, int c) {
-        if(grid[r][c].getcellstate() == CellState.CLOSED) {
-            System.out.println("You cannot command \"A\" on Closed Cell");
-            return;
-        }
-        int flagCnt = grid[r][c].getVal();
-        for(int[] dir : Directions) {
-            int nr = r + dir[0];
-            int nc = c + dir[1];
-            if (isValid(nr, nc) && grid[nr][nc].isFlaged()) flagCnt--;
-        }
-        if(flagCnt <= 0) search(r, c);
-        else return;
-    }
-
-    public void search(int r, int c) {
-        for(int[] dir : Directions) {
-            int nr = r + dir[0];
-            int nc = c + dir[1];
-            if (isValid(nr, nc)) {
-                openCell(nr, nc);
-            }
-        }
-    }
-
-    public int getRows() {
-        return rows;
-    }
-    public int getCols() {
-        return cols;
-    }
-    public int getMines() {
-        return mines;
-    }
-    public int getTotalCell() { 
-        return totalCell;
-    }
-    public void addOpenCnt() {
-        opened_count++;
-    }
-    public int getOpenedcnt() {
-        return opened_count;
-    }
-    public void addFlaggedcnt() {
-        flagged_count++;
-    }
-    public void subFlaggedcnt() {
-        flagged_count--;
-    }
-    public int getFlaggedcnt() {
-        return flagged_count;
-    }
-    public Cell[][] getGrid() {
-        return grid;
-    }
-    public GameState getGameState() {
-        return this.gameState;
-    }
-    public boolean isGameOver() {
-        return (gameState != GameState.RUNNING);
-    }
-    public void gameOver() {
-        this.gameState = GameState.LOST;
-    }
-    public void gameClear() {
-        this.gameState = GameState.WON;
-    }
 }
+
 
 
 // ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ//
@@ -297,10 +350,10 @@ class Cell {
     }
     
     public void open() {
-        if(isClose()) state = CellState.OPENED;
+        state = CellState.OPENED;
     }
 
-    public boolean isFlaged() {
+    public boolean isFlagged() {
         return state == CellState.FLAGGED;
     }
 
@@ -330,6 +383,7 @@ class Renderer {
         }
         System.out.println();
         Cell[][] rGrid = board.getGrid();
+        if(board.isGameOver()) board.allOpen();
         for(int r = 0; r < board.getRows(); r++) {
             System.out.printf("%-3d", r + 1);
             for(int c = 0; c < board.getCols(); c++) {
@@ -351,6 +405,9 @@ class Renderer {
                                 break;
                             case -2:
                                 System.out.printf("%-3s", "💥");
+                                break;
+                            case -3:
+                                System.out.printf("%-3s", "🎌");
                                 break;
                             default: 
                                 System.out.printf("%-3d", val);
@@ -377,10 +434,31 @@ class Renderer {
 
 // 입력 처리
 class InputHandler {
-    private BufferedReader br;
+    private BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     
-    InputHandler() {
-        br = new BufferedReader(new InputStreamReader(System.in));
+    public Level getLevel() {
+        while(true) {
+            try {
+                    System.out.println("What Level you want? please choose one and Enter, EASY : E, NORMAL : N, HARD : H");
+                    Level level = Level.TBA;
+                    while(level == Level.TBA) {
+                        String lev = br.readLine().trim().toUpperCase();
+                        switch (lev) {
+                            case "E":
+                            case "EASY": return Level.EASY;
+                            case "N":
+                            case "NORMAL": return Level.NORMAL;
+                            case "H":
+                            case "HARD": return Level.HARD;
+                            default:
+                                System.out.println("난이도를 다시 입력해주세요");
+                        }
+                    }
+                }
+            catch(IOException e) {
+                System.out.println("LevelInput Error");
+            }
+        }
     }
 
     public Command getCommand(Board board) {
@@ -472,31 +550,8 @@ enum ActionType {
 
 public class Refactoring {
     public static void main(String[] args) throws IOException{
-        System.out.println("What Level you want? please choose one and Enter, EASY : E, NORMAL : N, HARD : H");
-        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-        Level level = Level.TBA;
-        while(level == Level.TBA) {
-            String lev = br.readLine();
-            lev = lev.toUpperCase();
-            switch (lev) {
-                case "E": 
-                case "EASY": 
-                    level = Level.EASY;
-                    break;
-                case "N":
-                case "NORMAL":
-                    level = Level.NORMAL;
-                    break;
-                case "H":
-                case "HARD":
-                    level = Level.HARD;
-                    break;
-                default:
-                    System.out.println("난이도를 다시 입력해주세요");
-                    continue;
-            }
-        }
-        Game g = new Game(level);
+        
+        Game g = new Game();
         g.start();
     }
 }
