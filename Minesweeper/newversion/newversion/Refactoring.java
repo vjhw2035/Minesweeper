@@ -27,7 +27,7 @@ class Game {
 //난이도 조절 easy, normal, hard, 사용자 설정은 추후
 enum Level {
     TBA(0, 0, 0),
-    EASY(9, 9, 16),
+    EASY(9, 9, 10),
     NORMAL(16, 16, 40),
     HARD(16, 30, 99);
 
@@ -57,7 +57,8 @@ class Board {
     private Cell[][] grid;
     private int rows, cols, mines;
     private int totalCell;
-    private int opened_count;
+    private int opened_count, flagged_count;
+    private boolean initialized;
     private GameState gameState;
     private static final int[][] Directions = {
         {-1, -1}, {-1, 0}, {-1, 1},
@@ -68,6 +69,42 @@ class Board {
         return row >= 0 && row < rows 
         && col >= 0 && col < cols;
     }
+
+    private void placeMines(int firstrow, int firstcol) {
+        Set<Integer> mine_location = new HashSet<>();
+        while(mine_location.size() < mines) {
+            int random = (int)(Math.random() * getRows() * getCols());
+            if(random != (firstrow * getCols() + firstcol)) {
+                mine_location.add(random); 
+            }
+        }
+
+        Iterator<Integer> it = mine_location.iterator();
+        while(it.hasNext()) {
+            int loc = (int)it.next();
+            int row = loc / getCols();
+            int col = loc % getCols();
+            grid[row][col].setBomb();
+        }
+    }
+    private void calculate() {
+        for (int r = 0; r < rows; r++) { 
+            for (int c = 0; c < cols; c++) { 
+                if (grid[r][c].isBomb()) { 
+                    for (int[] dir : Directions) { 
+                        int nr = r + dir[0]; 
+                        int nc = c + dir[1]; 
+                        if (isValid(nr, nc)) { 
+                            if(!grid[nr][nc].isBomb()) { 
+                                int cnt = grid[nr][nc].getVal() + 1; 
+                                grid[nr][nc].setVal(cnt); 
+                            }
+                        }
+                    }         
+                }
+            }
+        }
+    }
     
 
     Board(int rows, int cols, int mines) {
@@ -76,6 +113,7 @@ class Board {
         this.mines = mines;
         this.totalCell = rows * cols;
         this.opened_count = 0;
+        this.initialized = false;
         this.gameState = GameState.RUNNING;
 
         grid = new Cell[rows][cols];
@@ -84,48 +122,6 @@ class Board {
                 grid[r][c] = new Cell();
             }
         }
-        
-        Set<Integer> mine_location = new HashSet<>();
-        while(mine_location.size() < mines) {
-            int random = (int)(Math.random() * rows * cols);
-            mine_location.add(random);
-        }
-
-        Iterator<Integer> it = mine_location.iterator();
-        while(it.hasNext()) {
-            int loc = (int)it.next();
-            int row = loc / cols;
-            int col = loc % cols;
-            grid[row][col].setBomb();
-        }
-        for (int r = 0; r < rows; r++) {
-            for (int c = 0; c < cols; c++) {
-                if (grid[r][c].isBomb()) {
-                    for (int[] dir : Directions) {
-                        int nr = r + dir[0];
-                        int nc = c + dir[1];
-                        if (isValid(nr, nc)) {
-                            if(!grid[nr][nc].isBomb()) {
-                                int cnt = grid[nr][nc].getVal() + 1;
-                                grid[nr][nc].setVal(cnt);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    public boolean isGameOver() {
-        return (gameState != GameState.RUNNING);
-    }
-    
-    public void gameOver() {
-        this.gameState = GameState.LOST;
-    }
-
-    public void gameClear() {
-        this.gameState = GameState.WON;
     }
 
     public void applyCommand(Command command) {
@@ -137,12 +133,29 @@ class Board {
 
         switch (action) {
             case OPEN:
+                if(!initialized) {
+                    placeMines(r, c);
+                    calculate();
+                    initialized = true;
+                }
                 openCell(r, c);
                 break;
         
             case FLAG:
-                if(cell.isFlaged()) cell.unflag();
-                else cell.flag();
+                if(!cell.isFlaged()) {
+                    if(getFlaggedcnt() < getMines()) {
+                        addFlaggedcnt();
+                        cell.flag();
+                    }
+                    else {
+                        System.out.println("No more Flag");
+                        return;
+                    }
+                }
+                else {
+                    subFlaggedcnt();
+                    cell.unflag();
+                }
                 break;
 
             case ARROUND:
@@ -150,7 +163,7 @@ class Board {
                 break;
         }
     }
-    public void openCell(int r, int c) {
+    private void openCell(int r, int c) {
         Cell cell = grid[r][c];
         if(cell.isClose()) {
             int val = cell.getVal();
@@ -172,14 +185,18 @@ class Board {
         }
     }
 
-    public void arroundCell(int r, int c) {
+    private void arroundCell(int r, int c) {
+        if(grid[r][c].getcellstate() == CellState.CLOSED) {
+            System.out.println("You cannot command \"A\" on Closed Cell");
+            return;
+        }
         int flagCnt = grid[r][c].getVal();
         for(int[] dir : Directions) {
             int nr = r + dir[0];
             int nc = c + dir[1];
             if (isValid(nr, nc) && grid[nr][nc].isFlaged()) flagCnt--;
         }
-        if(flagCnt == 0) search(r, c);
+        if(flagCnt <= 0) search(r, c);
         else return;
     }
 
@@ -211,12 +228,29 @@ class Board {
     public int getOpenedcnt() {
         return opened_count;
     }
-
+    public void addFlaggedcnt() {
+        flagged_count++;
+    }
+    public void subFlaggedcnt() {
+        flagged_count--;
+    }
+    public int getFlaggedcnt() {
+        return flagged_count;
+    }
     public Cell[][] getGrid() {
         return grid;
     }
     public GameState getGameState() {
         return this.gameState;
+    }
+    public boolean isGameOver() {
+        return (gameState != GameState.RUNNING);
+    }
+    public void gameOver() {
+        this.gameState = GameState.LOST;
+    }
+    public void gameClear() {
+        this.gameState = GameState.WON;
     }
 }
 
@@ -289,7 +323,7 @@ class Cell {
 // 보드 출력
 class Renderer {
     public void render(Board board) {
-        System.out.println("\nresult square : " + (board.getTotalCell() - board.getOpenedcnt()) + "\n");
+        System.out.println("\nRemaining Mines : " + (board.getMines() - board.getFlaggedcnt()) + "\n");
         System.out.print("   ");
         for (int c = 0; c < board.getCols(); c++) {
             System.out.printf("%-3d", c + 1);
@@ -325,6 +359,16 @@ class Renderer {
                 }
             }
             System.out.println();
+        }
+        GameState state = board.getGameState();
+        switch (state) {
+            case WON:
+                System.out.println("\nCongratulation for clear!");
+                break;
+            case LOST:
+                System.out.println("\nOh... You failed... You want a retry?");
+                break;
+            case RUNNING: break;
         }
     }
 }
