@@ -29,7 +29,7 @@ class Game {
         }
         renderer.render(board);
         timer.gameEnd();
-        System.out.println("\nGame Time: " + timer.howMuchTime().getSeconds() + "seconds");
+        System.out.println("\nGame Time: " + timer.howMuchTime().getSeconds() + " secs");
     }
 }
 
@@ -391,22 +391,22 @@ class Renderer {
                         System.out.printf("%-3s", "■");
                         break;
                     case FLAGGED:
-                        System.out.printf("%-3s", "🚩");
+                        System.out.printf("%-3s", "F");
                         break;
                     case OPENED:
                         int val = rGrid[r][c].getVal();
                         switch(val) {
                             case -1:
-                                System.out.printf("%-3s", "💣");
+                                System.out.printf("%-3s", "#");
                                 break;
                             case 0:
                                 System.out.printf("%-3s", ".");
                                 break;
                             case -2:
-                                System.out.printf("%-3s", "💥");
+                                System.out.printf("%-3s", "*");
                                 break;
                             case -3:
-                                System.out.printf("%-3s", "🎌");
+                                System.out.printf("%-3s", "X");
                                 break;
                             default: 
                                 System.out.printf("%-3d", val);
